@@ -9,6 +9,10 @@
 @synthesize addrField;
 @synthesize portField;
 @synthesize messageField;
+@synthesize alertField;
+@synthesize tokenField;
+@synthesize badgeField;
+@synthesize soundField;
 @synthesize sendButton;
 @synthesize logView;
 
@@ -96,18 +100,24 @@
 		[self logError:@"Valid port required"];
 		return;
 	}
+
+    NSMutableDictionary *mutableDictionary = [NSMutableDictionary dictionary];
+    
+    [@[messageField, alertField, tokenField, badgeField, soundField] enumerateObjectsUsingBlock:^(NSTextField *textField, NSUInteger idx, BOOL *stop) {
+        if (textField.stringValue.length) {
+            NSString *key = [[textField.cell placeholderString] lowercaseString];
+            NSString *value = textField.stringValue;
+            [mutableDictionary addEntriesFromDictionary:@{key : value}];
+        }
+    }];
+        
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:@{@"aps" : mutableDictionary}
+                                                       options:NSJSONWritingPrettyPrinted // Pass 0 if you don't care about the readability of the generated string
+                                                         error:nil];
+
+	[udpSocket sendData:jsonData toHost:host port:port withTimeout:-1 tag:tag];
 	
-	NSString *msg = [messageField stringValue];
-	if ([msg length] == 0)
-	{
-		[self logError:@"Message required"];
-		return;
-	}
-	
-	NSData *data = [msg dataUsingEncoding:NSUTF8StringEncoding];
-	[udpSocket sendData:data toHost:host port:port withTimeout:-1 tag:tag];
-	
-	[self logMessage:FORMAT(@"SENT (%i): %@", (int)tag, msg)];
+	[self logMessage:FORMAT(@"SENT (%i): %@", (int)tag, [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding])];
 	
 	tag++;
 }
