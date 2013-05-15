@@ -103,13 +103,18 @@
 		[self logError:@"Message required"];
 		return;
 	}
-	
+    
 	NSData *data = [msg dataUsingEncoding:NSUTF8StringEncoding];
+    NSLog(@"%@", [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil]);
 	[udpSocket sendData:data toHost:host port:port withTimeout:-1 tag:tag];
 	
 	[self logMessage:FORMAT(@"SENT (%i): %@", (int)tag, msg)];
 	
 	tag++;
+}
+
+- (IBAction)clear:(id)sender {
+    logView.string = @"";
 }
 
 - (void)onUdpSocket:(AsyncUdpSocket *)sock didSendDataWithTag:(long)tag
